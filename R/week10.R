@@ -70,3 +70,24 @@ EGB <- train(
                          eta = c(0.1, 0.3)) # I kept the nrounds low and used only two values for lambda, alpha, and eta. This decision was chosen to balance predictive power with model run time.
 )
 EGB
+
+# Come back and interpret this warning messages.
+cor(predict(OLS, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
+cor(predict(Enet, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
+cor(predict(random_forest_gump, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
+cor(predict(EGB, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
+
+## Publication
+
+table1_tbl <- tibble(
+  algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
+  cv_rsq = c(),
+  ho_rsq = c()
+)
+
+# Q1: How did your results change between models? Why do you think this happened, specifically?
+# A:
+
+# Q2: How did you results change between k-fold CV and holdout CV? Why do you think this happened, specifically? 
+
+# Q3: Among the four models, which would you choose for a real-life prediction problem, and why? Are there tradeoffs? Write up to a paragraph.
