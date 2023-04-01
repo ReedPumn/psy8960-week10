@@ -6,6 +6,7 @@ library(caret)
 set.seed(123)
 
 ## Data Import and Cleaning
+# This series of pipes reads our data file, removes all missing values in the criterion column, makes all values numeric, formats the data into a tibble, and removes columns with more than 75% missing data. The data were made numeric to enable later analyses in the caret package. Columns with a lot of missing data were removed to base our models on more stable sources of data.
 gss_tbl <- read_spss("../data/GSS2016.sav") %>%
   filter(!is.na(HRS1)) %>%
   sapply(as.numeric) %>%
@@ -13,19 +14,25 @@ gss_tbl <- read_spss("../data/GSS2016.sav") %>%
   select_if(~(mean(is.na(.)) * 100) <= 75) # This line combines several verbs on the same line, but only for added readability.
 
 ## Visualization
-
+# This series of pipes visualizes our criterion variable. I made a histogram with a smaller number of "buckets" by changing to binwidth to create a simpler figure.
 (ggplot(gss_tbl, aes(x = HRS1)) +
   geom_histogram(binwidth = 10) +
   labs(x = "Workhours", y = "Count")) %>%
   ggsave("../figs/fig1.png", ., width = 1920, height = 1080, units = "px")
 
 ## Analysis
+# This line randomizes the rows in our tibble to be later divided into training and test sets.
 gss_random_tbl <- gss_tbl[sample(nrow(gss_tbl)), ]
+# This line lets us know where to "slice" our data in half. We use this slice point to create our training data and test data.
 gss_random75 <- round(nrow(gss_random_tbl) * 0.75, 0)
+# This line creates our training set with 75% of our data. We do this to give our models enough data to form stable predictions to new data.
 gss_train_tbl <- gss_random_tbl[1:gss_random75_tbl, ]
+# This line splits our training data into 10 folds. We do this to safely evaluate the central tendency and variability of our metrics of interest.
 kfolds <- createFolds(gss_train_tbl$HRS1, 10)
+# This line creates our test set with 25% of our data. We do this to later test the predictive accuracy of our models.
 gss_test_tbl <- gss_random_tbl[(gss_random75_tbl + 1):nrow(gss_random_tbl), ]
 
+# This series of pipes trains our OLS Regression model. We trained this model on the "gss_train_tbl" using the indexOut = kfolds to use the datasets and hyperparameters we previously set.
 OLS <- train(
   HRS1 ~ .,
   gss_train_tbl,
@@ -34,8 +41,10 @@ OLS <- train(
   preProcess = "medianImpute",
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
+# This line reports the results of the model. I added this line to check for abnormal results, such as rampant NAs.
 OLS
 
+# This series of pipes trains our elastic net model. It uses identical hyperparameters as the OLS Regression model due to them both being more simpler prediction models.
 Enet <- train(
   HRS1 ~ .,
   gss_train_tbl,
@@ -44,8 +53,10 @@ Enet <- train(
   preProcess = "medianImpute",
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
+# This line reports the results of the model. I added this line to check for abnormal results, such as rampant NAs.
 Enet
 
+# This series of pipes trains our Random Forrest model. The model originally took far too long to run using defult hyperparameters. As a result, I used the tuneGrid argument to specify hyperparameters for a more manageable run time.
 random_forest_gump <- train(
   HRS1 ~ .,
   gss_train_tbl,
@@ -53,10 +64,12 @@ random_forest_gump <- train(
   na.action = na.pass,
   preProcess = "medianImpute",
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE),
-  tuneGrid = expand.grid(mtry = c(5, 50, 100), splitrule = "variance", min.node.size = 5) #The kfold and LOOCV splitrules do not work, but the variance splitrule does work.
+  tuneGrid = expand.grid(mtry = c(5, 50, 100), splitrule = "variance", min.node.size = 5) # Note: The kfold and LOOCV splitrules do not work, but the variance splitrule does work.
 )
+# This line reports the results of the model. I added this line to check for abnormal results, such as rampant NAs.
 random_forest_gump
 
+# This series of pipes trains our eXtreme Gradient Boosting model. This model also took far too long to run using default hyperparameters. As a result, I used chatGPT to learn what hyperparameters I could program using the tuneGrid argument.
 EGB <- train(
   HRS1 ~ .,
   gss_train_tbl,
@@ -69,8 +82,10 @@ EGB <- train(
                          alpha = c(0.1, 0.5),
                          eta = c(0.1, 0.3)) # I kept the nrounds low and used only two values for lambda, alpha, and eta. This decision was chosen to balance predictive power with model run time.
 )
+# This line reports the results of the model. I added this line to check for abnormal results, such as rampant NAs.
 EGB
 
+# These four lines of code store our four model's R2 values when applied to the training data. I named these values to more easily create the table1_tbl.
 FirstR2 <- OLS$results$Rsquared %>%
   round(2) %>%
   str_remove(pattern = "^(?-)0")
@@ -84,10 +99,10 @@ FourthR2 <- max(EGB$results$Rsquared) %>%
   round(2) %>%
   str_remove(pattern = "^(?-)0")
 
-# Come back and interpret this warning message.
+# These four lines store our four model's R2 values when applied to the test data. I named these values to more esasily create the table1_tbl.
 holdout1 <- cor(predict(OLS, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2  %>%
   round(2) %>%
-  str_remove(pattern = "^(?-)0")
+  str_remove(pattern = "^(?-)0") # This produced the following warning message: "prediction from a rank-deficient fit may be misleading." This warning might have occured because two or more predictor variables are perfectly correlated. Given the number of columns in this dataset, it is fairly possible for two of them to show zero variance, subsequently producing perfect correlations.
 holdout2 <- cor(predict(Enet, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2  %>%
   round(2) %>%
   str_remove(pattern = "^(?-)0")
@@ -99,7 +114,7 @@ holdout4 <- cor(predict(EGB, gss_test_tbl, na.action = na.pass), gss_test_tbl$HR
   str_remove(pattern = "^(?-)0")
 
 ## Publication
-
+# This series of lines creates our tibble summarizing how well our models that were trained in one dataset predict data in the test dataset. Because I named each of the values for the "cv_rsq" and "ho_rsq" columns, it is really easy to create the tibble.
 table1_tbl <- tibble(
   algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
   cv_rsq = c(FirstR2, SecondR2, ThirdR2, FourthR2),
