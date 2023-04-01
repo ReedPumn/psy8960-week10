@@ -34,3 +34,14 @@ OLS <- train(
   preProcess = "medianImpute",
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
+OLS
+
+Enet <- train(
+  HRS1 ~ .,
+  gss_train_tbl,
+  method = "glmnet",
+  na.action = na.pass,
+  preProcess = "medianImpute",
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+)
+Enet
