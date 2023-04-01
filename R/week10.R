@@ -7,8 +7,9 @@ set.seed(123)
 
 ## Data Import and Cleaning
 gss_tbl <- read_spss("../data/GSS2016.sav") %>%
+  filter(!is.na(HRS1)) %>%
+  sapply(as.numeric) %>%
   as_tibble() %>%
-  drop_na(HRS1) %>%
   select_if(~(mean(is.na(.)) * 100) <= 75) # This line combines several verbs on the same line, but only for added readability.
 
 ## Visualization
@@ -25,4 +26,11 @@ gss_train_tbl <- gss_random_tbl[1:gss_random75_tbl, ]
 kfolds <- createFolds(gss_train_tbl$HRS1, 10)
 gss_test_tbl <- gss_random_tbl[(gss_random75_tbl + 1):nrow(gss_random_tbl), ]
 
-#Now use this setup to create the four models using a similar formula, but unique method = "" settings.
+OLS <- train(
+  HRS1 ~ .,
+  gss_train_tbl,
+  method = "lm",
+  na.action = na.pass,
+  preProcess = "medianImpute",
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+)
