@@ -26,11 +26,11 @@ gss_random_tbl <- gss_tbl[sample(nrow(gss_tbl)), ]
 # This line lets us know where to "slice" our data in half. We use this slice point to create our training data and test data.
 gss_random75 <- round(nrow(gss_random_tbl) * 0.75, 0)
 # This line creates our training set with 75% of our data. We do this to give our models enough data to form stable predictions to new data.
-gss_train_tbl <- gss_random_tbl[1:gss_random75_tbl, ]
+gss_train_tbl <- gss_random_tbl[1:gss_random75, ]
 # This line splits our training data into 10 folds. We do this to safely evaluate the central tendency and variability of our metrics of interest.
 kfolds <- createFolds(gss_train_tbl$HRS1, 10)
 # This line creates our test set with 25% of our data. We do this to later test the predictive accuracy of our models.
-gss_test_tbl <- gss_random_tbl[(gss_random75_tbl + 1):nrow(gss_random_tbl), ]
+gss_test_tbl <- gss_random_tbl[(gss_random75 + 1):nrow(gss_random_tbl), ]
 
 # This series of pipes trains our OLS Regression model. We trained this model on the "gss_train_tbl" using the indexOut = kfolds to use the datasets and hyperparameters we previously set.
 OLS <- train(
