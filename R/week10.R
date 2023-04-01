@@ -45,3 +45,13 @@ Enet <- train(
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
 Enet
+
+random_forest_gump <- train(
+  HRS1 ~ .,
+  gss_train_tbl,
+  method = "ranger",
+  na.action = na.pass,
+  preProcess = "medianImpute",
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+)
+random_forest_gump
