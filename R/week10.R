@@ -53,7 +53,7 @@ random_forest_gump <- train(
   na.action = na.pass,
   preProcess = "medianImpute",
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE),
-  tuneGrid = expand.grid(mtry = c(5, 25, 50, 100), splitrule = "variance", min.node.size = 5) #The kfold and LOOCV splitrules do not work, but the variance splitrule does work.
+  tuneGrid = expand.grid(mtry = c(5, 50, 100), splitrule = "variance", min.node.size = 5) #The kfold and LOOCV splitrules do not work, but the variance splitrule does work.
 )
 random_forest_gump
 
@@ -71,18 +71,39 @@ EGB <- train(
 )
 EGB
 
-# Come back and interpret this warning messages.
-cor(predict(OLS, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
-cor(predict(Enet, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
-cor(predict(random_forest_gump, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
-cor(predict(EGB, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2
+FirstR2 <- OLS$results$Rsquared %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+SecondR2 <- max(Enet$results$Rsquared) %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+ThirdR2 <- max(random_forest_gump$results$Rsquared) %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+FourthR2 <- max(EGB$results$Rsquared) %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+
+# Come back and interpret this warning message.
+holdout1 <- cor(predict(OLS, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2  %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+holdout2 <- cor(predict(Enet, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2  %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+holdout3 <- cor(predict(random_forest_gump, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2  %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
+holdout4 <- cor(predict(EGB, gss_test_tbl, na.action = na.pass), gss_test_tbl$HRS1)^2 %>%
+  round(2) %>%
+  str_remove(pattern = "^(?-)0")
 
 ## Publication
 
 table1_tbl <- tibble(
   algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
-  cv_rsq = c(),
-  ho_rsq = c()
+  cv_rsq = c(FirstR2, SecondR2, ThirdR2, FourthR2),
+  ho_rsq = c(holdout1, holdout2, holdout3, holdout4)
 )
 
 # Q1: How did your results change between models? Why do you think this happened, specifically?
