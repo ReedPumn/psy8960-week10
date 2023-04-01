@@ -63,6 +63,10 @@ EGB <- train(
   method = "xgbLinear", #This method was chosen over xgbTree because we are trying to make prediction in our data not in terms of decisions.
   na.action = na.pass,
   preProcess = "medianImpute",
-  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE),
+  tuneGrid = expand.grid(nrounds = c(10, 30, 50),
+                         lambda = c(1, 10),
+                         alpha = c(0.1, 0.5),
+                         eta = c(0.1, 0.3)) # I kept the nrounds low and used only two values for lambda, alpha, and eta. This decision was chosen to balance predictive power with model run time.
 )
 EGB
