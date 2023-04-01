@@ -52,6 +52,7 @@ random_forest_gump <- train(
   method = "ranger",
   na.action = na.pass,
   preProcess = "medianImpute",
-  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE),
+  tuneGrid = expand.grid(mtry = c(5, 25, 50, 100), splitrule = "variance", min.node.size = 5) #The kfold and LOOCV splitrules do not work, but the variance splitrule does work.
 )
 random_forest_gump
